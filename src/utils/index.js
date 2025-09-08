@@ -7,5 +7,5 @@ export function isString(target) {
 }
 
 export function hasChanged(n1, n2) {
-  return n1 !== n2 && !(Number.isNaN(n1) === Number.isNaN(n2))
+  return n1 !== n2 && !(Number.isNaN(n1) !== Number.isNaN(n2))
 }
