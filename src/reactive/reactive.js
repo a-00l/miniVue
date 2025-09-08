@@ -1,13 +1,16 @@
 import { hasChanged, isObject } from "../utils/index.js";
 import { track, trigger } from './index.js'
 
+const proxyMap = new Map()
 export function reactive(target) {
   // 判断target是否是对象
   if (!isObject(target)) return target
   // 目标是否为proxy，是则返回target
   if (isReactive(target)) return target
+  // 如果对象已经被代理了，则返回该对象
+  if (proxyMap.has(target)) return proxyMap.get(target)
 
-  return new Proxy(target, {
+  const proxy = new Proxy(target, {
     get(target, key, receiver) {
 
       // 如果已经是reactive，则返回
@@ -29,6 +32,9 @@ export function reactive(target) {
       return result
     }
   })
+
+  proxyMap.set(target, proxy)
+  return proxy
 }
 
 function isReactive(target) {
