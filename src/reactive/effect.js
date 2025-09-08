@@ -5,6 +5,9 @@ const depsMap = new Map()
  * @param {string} key 
  */
 export function track(target, key) {
+  // 没有effect，则返回
+  if (!currentEffect) return
+
   let deps = depsMap.get(target)
   if (!deps) {
     deps = new Map()
