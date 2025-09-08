@@ -24,6 +24,24 @@ export function track(target, key) {
   dep.add(currentEffect)
 }
 
+/**
+ * @description 触发对应key的effect
+ * @param {object} target 
+ * @param {string} key 要触发effect的键值 
+ */
+export function trigger(target, key) {
+  let deps = depsMap.get(target)
+  if (!deps) return
+
+  let dep = deps.get(key)
+  if (!dep) return
+
+  // 触发
+  dep.forEach(effectFn => {
+    effectFn()
+  });
+}
+
 // 记录effect
 let currentEffect;
 /**
