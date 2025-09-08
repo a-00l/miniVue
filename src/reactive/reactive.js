@@ -1,11 +1,11 @@
 import { isObject } from "../utils/index.js";
-import { track } from "./effect.js";
+import { track, trigger } from './index.js'
 
 export function reactive(target) {
   // 判断target是否是对象
   if (!isObject(target)) return target
   // 目标是否为proxy，是则返回target
-  if (!isReactive(target)) return target
+  if (isReactive(target)) return target
 
   return new Proxy(target, {
     get(target, key, receiver) {
@@ -16,7 +16,9 @@ export function reactive(target) {
       return Reflect.get(target, key, receiver)
     },
     set(target, key, newValue, receiver) {
-      return Reflect.set(target, key, newValue, receiver)
+      const result = Reflect.set(target, key, newValue, receiver)
+      trigger(target, key)
+      return result
     }
   })
 }
