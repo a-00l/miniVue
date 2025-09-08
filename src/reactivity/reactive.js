@@ -2,6 +2,10 @@ import { hasChanged, isObject } from "../utils/index.js";
 import { track, trigger } from './index.js'
 
 const proxyMap = new Map()
+/**
+ * @description 使对象获得响应式
+ * @param {object} target 
+ */
 export function reactive(target) {
   // 判断target是否是对象
   if (!isObject(target)) return target
