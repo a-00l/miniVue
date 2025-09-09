@@ -13,3 +13,11 @@ export function hasChanged(n1, n2) {
 export function isFunction(target) {
   return typeof target === 'function'
 }
+
+export function isArray(target) {
+  return Array.isArray(target)
+}
+
+export function isNumber(target) {
+  return typeof target === 'number'
+}
