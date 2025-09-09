@@ -19,9 +19,11 @@ export function reactive(target) {
 
       // 如果已经是reactive，则返回
       if (key === '__isReactive') return true
+      const res = Reflect.get(target, key, receiver)
       // 收集
       track(target, key)
-      return Reflect.get(target, key, receiver)
+      // 实现深层响应式：即对象内部的嵌套对象也能被响应式追踪
+      return isObject(res) ? reactive(res) : res
     },
     set(target, key, newValue, receiver) {
       // 获取旧值
