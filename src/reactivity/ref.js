@@ -1,4 +1,4 @@
-import { hasChanged, isObject } from "../utils/index.js"
+import { hasChanged, isObject } from "../utils"
 import { reactive, track, trigger } from "./index.js"
 export function ref(value) {
   // 判断该值是否为ref
@@ -29,8 +29,8 @@ class RefImpl {
   }
 }
 
-function isRef(value) {
-  return value && value.__isRef
+export function isRef(value) {
+  return !!(value && value.__isRef)
 }
 
 /**

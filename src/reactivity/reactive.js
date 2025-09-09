@@ -1,4 +1,4 @@
-import { hasChanged, isObject } from "../utils/index.js";
+import { hasChanged, isObject } from "../utils";
 import { track, trigger } from './index.js'
 
 const proxyMap = new Map()
@@ -43,6 +43,6 @@ export function reactive(target) {
   return proxy
 }
 
-function isReactive(target) {
-  return target && target.__isReactive
+export function isReactive(target) {
+  return !!(target && target.__isReactive)
 }
