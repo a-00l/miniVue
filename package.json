@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "vite": "^7.1.5",
+    "vitest": "^3.2.4"
+  },
+  "devDependencies": {
+    "jsdom": "^26.1.0"
+  }
+}
