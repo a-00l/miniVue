@@ -38,7 +38,12 @@ export function trigger(target, key) {
 
   // 触发
   dep.forEach(effectFn => {
-    effectFn()
+    if (effectFn.schedule) {
+      // 触发调度器
+      effectFn.schedule()
+    } else {
+      effectFn()
+    }
   });
 }
 
@@ -48,18 +53,22 @@ let currentEffect;
  * @description 副作用函数
  * @param {Function} fn
  */
-export function effect(fn) {
+export function effect(fn, optoins = {}) {
   const effectFn = () => {
     try {
-      currentEffect = fn
+      currentEffect = effectFn
       return fn()
     } finally {
       currentEffect = null
     }
   }
 
-  // 自动执行一次
-  effectFn()
+  // 不是懒加载，再自动执行
+  if (!optoins.lazy) {
+    effectFn()
+  }
 
+  // 挂载schedule方法，好再trigger中手动触发
+  effectFn.schedule = optoins.schedule
   return effectFn
 }
