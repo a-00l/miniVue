@@ -123,7 +123,7 @@ function patchChildren(n1, n2, el) {
       mountChildren(c2, el)
     } else if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
       // TODO：diff
-      patchKeyedChildren(c1, c2, el)
+      patchUnkeyedChildren(c1, c2, el)
     } else {
       mountChildren(c2, el)
     }
@@ -136,6 +136,24 @@ function patchChildren(n1, n2, el) {
     }
   }
 
+}
+
+function patchUnkeyedChildren(c1, c2, container) {
+  const oldLength = c1.length
+  const newLength = c2.length
+  const commonLength = Math.min(oldLength, newLength)
+  // 将公共的children进行比较
+  for (let i = 0; i < commonLength; i++) {
+    patch(c1[i], c2[i], container)
+  }
+
+  if (oldLength > newLength) {
+    // 卸载旧值多出来的children
+    unmountChildren(c1.slice(commonLength))
+  } else {
+    // 挂载新值多出来的children
+    mountChildren(c2.slice(commonLength), container)
+  }
 }
 
 /**
