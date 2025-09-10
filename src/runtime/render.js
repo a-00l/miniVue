@@ -55,6 +55,47 @@ export function parse(n1, n2, container) {
   }
 }
 
+function processComponent(n1, n2, container) { }
+/**
+ * @description 对Text节点比较
+ */
+function processTextNode(n1, n2, container) {
+  if (n1) {
+    // 1.n1存在，则将n1内容覆盖
+    n1.el.textContent = n2.children
+  } else {
+    // 2.n1不存在，对n2进行挂载操作
+    mountTextNode(n2, container)
+  }
+}
+
+/**
+ * @description 对Element节点比较
+ */
+function processElement(n1, n2, container) {
+  if (n1) {
+    // 1.n1存在，则比较n1和n2的内容区别
+    patchElement(n1, n2, container)
+  } else {
+    // 2.n1不存在，对n2进行挂载操作
+    mountElement(n2, container)
+  }
+}
+
+/**
+ * @description 对Fragment节点比较
+ */
+function processFragment(n1, n2, container) {
+  const { el } = n1
+  if (n1) {
+    // 1.如果n1存在，则进行比较
+    patchFragment(n1, n2, container)
+  } else {
+    // 2.如果n1不存在，则挂载n2的所有children
+    mountChildren(n1, n2, container)
+  }
+}
+
 function isSameType(n1, n2) {
   return n1.type === n2.type
 }
