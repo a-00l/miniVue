@@ -256,13 +256,12 @@ function patchDomProp(oldValue, newValue, key, el) {
  * @description 对Fragment节点比较
  */
 function processFragment(n1, n2, container) {
-  const { el } = n1
   if (n1) {
-    // 1.如果n1存在，则进行比较
-    patchFragment(n1, n2, container)
+    // 1.如果n1存在，则进行children比较
+    patchChildren(n1, n2, container)
   } else {
     // 2.如果n1不存在，则挂载n2的所有children
-    mountChildren(n1, n2, container)
+    mountChildren(n2.children, container)
   }
 }
 
