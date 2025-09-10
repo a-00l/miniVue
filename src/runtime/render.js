@@ -32,4 +32,29 @@ function unmount(vnode, container) {
   }
 }
 
-function parse(n1, n2, container) { }
+/**
+ * @description 比较新旧节点
+ * @param {*} n1 旧节点 
+ * @param {*} n2 新节点
+ */
+export function parse(n1, n2, container) {
+  // 1.n1类型和n2类型不相同，则卸载n1
+  if (n1 && !isSameType(n1, n2)) {
+    unmount(n1)
+  }
+  // 2.根据n1、n2的类型不同，进行不同处理
+  const { shapeFlag } = n2
+  if (shapeFlag === ShapeFlags.COMPONENT) {
+    processComponent(n1, n2, container)
+  } else if (shapeFlag === ShapeFlags.TEXT) {
+    processTextNode(n1, n2, container)
+  } else if (shapeFlag === ShapeFlags.ELEMENT) {
+    processElement(n1, n2, container)
+  } else {
+    processFragment(n1, n2, container)
+  }
+}
+
+function isSameType(n1, n2) {
+  return n1.type === n2.type
+}
