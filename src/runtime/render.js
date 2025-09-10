@@ -44,11 +44,11 @@ export function parse(n1, n2, container) {
   }
   // 2.根据n1、n2的类型不同，进行不同处理
   const { shapeFlag } = n2
-  if (shapeFlag === ShapeFlags.COMPONENT) {
+  if (shapeFlag & ShapeFlags.COMPONENT) {
     processComponent(n1, n2, container)
-  } else if (shapeFlag === ShapeFlags.TEXT) {
+  } else if (shapeFlag & ShapeFlags.TEXT) {
     processTextNode(n1, n2, container)
-  } else if (shapeFlag === ShapeFlags.ELEMENT) {
+  } else if (shapeFlag & ShapeFlags.ELEMENT) {
     processElement(n1, n2, container)
   } else {
     processFragment(n1, n2, container)
@@ -156,7 +156,7 @@ function mountElement(vnode, container) {
   // 2.设置props
   patchProps(null, vnode.props, el)
   // 3.根据不同的children进行不同的处理
-  if (shapeFlag & ShapeFlags.CHILDREN) {
+  if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
     // 3.1挂载文本节点
     mountTextNode(el, container)
   } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
