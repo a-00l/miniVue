@@ -114,10 +114,14 @@ function mountElement(vnode, container) {
   container.el = el
 }
 
+function mountChildren(children, container) {
+  children.forEach(child => {
+    parse(null, child, container)
+  });
+}
 /**
  * @description 比较两个节点的props
  */
-
 export function patchProps(oldProps, newProps, el) {
   if (oldProps === newProps) return
 
