@@ -154,7 +154,7 @@ function mountElement(vnode, container) {
   const { type, shapeFlag } = vnode
   const el = document.createElement(type)
   // 2.设置props
-  patchProps(null, vnode, el)
+  patchProps(null, vnode.props, el)
   // 3.根据不同的children进行不同的处理
   if (shapeFlag & ShapeFlags.CHILDREN) {
     // 3.1挂载文本节点
