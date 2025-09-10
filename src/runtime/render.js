@@ -93,6 +93,60 @@ function processElement(n1, n2, container) {
 }
 
 /**
+ * @description 比较两个Element元素的不同
+ * @param {*} n1 
+ * @param {*} n2 
+ */
+function patchElement(n1, n2) {
+  patchProps(n1.props, n2.props, n1.el)
+  patchChildren(n1, n2, n1.el)
+}
+
+function patchChildren(n1, n2, el) {
+  const { children: c1, shapeFlag: prevShapeFlag } = n1
+  const { children: c2, shapeFlag } = n2
+  // 一共有三种情况：
+  if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
+    // Text
+    if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+      // 卸载旧节点
+      unmountChildren(c1)
+    }
+
+    el.textContent = n2.children
+  } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+    // array
+    if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+      el.textContent = ''
+      mountChildren(c2, el)
+    } else if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+      // TODO：diff
+      patchKeyedChildren(c1, c2, el)
+    } else {
+      mountChildren(c2, el)
+    }
+  } else {
+    // null
+    if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+      el.textContent = ''
+    } else if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+      unmountChildren(c1)
+    }
+  }
+
+}
+
+/**
+ * @description 卸载所有子节点
+ * @param {*} vnode 
+ */
+function unmountChildren(vnode) {
+  vnode.forEach(child => {
+    unmount(child)
+  })
+}
+
+/**
  * @description 挂载Element节点
  */
 function mountElement(vnode, container) {
@@ -114,6 +168,9 @@ function mountElement(vnode, container) {
   container.el = el
 }
 
+/**
+ * @description 挂载children节点
+ */
 function mountChildren(children, container) {
   children.forEach(child => {
     parse(null, child, container)
