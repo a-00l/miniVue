@@ -9,8 +9,10 @@ export function render(vnode, container) {
   }
   else {
     // 2.vnode有值，将prevVNode和vnode进行比较
-    parse(prevVNode, vnode, container)
+    patch(prevVNode, vnode, container)
   }
+
+  container._vnode = vnode
 }
 
 /**
@@ -37,7 +39,7 @@ function unmount(vnode, container) {
  * @param {*} n1 旧节点 
  * @param {*} n2 新节点
  */
-export function parse(n1, n2, container) {
+export function patch(n1, n2, container) {
   // 1.n1类型和n2类型不相同，则卸载n1
   if (n1 && !isSameType(n1, n2)) {
     unmount(n1)
@@ -76,7 +78,7 @@ function mountTextNode(vnode, container) {
   const text = document.createTextNode(vnode.children)
   container.appendChild(text)
   // 记录dom节点
-  container.el = vnode
+  vnode.el = vnode
 }
 
 /**
@@ -158,14 +160,15 @@ function mountElement(vnode, container) {
   // 3.根据不同的children进行不同的处理
   if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
     // 3.1挂载文本节点
-    mountTextNode(el, container)
+    mountTextNode(vnode, el)
   } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
     // 3.2挂载数组节点
-    mountChildren(el, container)
+    mountChildren(vnode.children, el)
   }
 
+  container.appendChild(el)
   // 记录dom节点
-  container.el = el
+  vnode.el = el
 }
 
 /**
@@ -173,7 +176,7 @@ function mountElement(vnode, container) {
  */
 function mountChildren(children, container) {
   children.forEach(child => {
-    parse(null, child, container)
+    patch(null, child, container)
   });
 }
 /**
