@@ -39,7 +39,7 @@ function unmount(vnode, container) {
  * @param {*} n1 旧节点 
  * @param {*} n2 新节点
  */
-export function patch(n1, n2, container) {
+export function patch(n1, n2, container, anchor) {
   // 1.n1类型和n2类型不相同，则卸载n1
   if (n1 && !isSameType(n1, n2)) {
     unmount(n1)
@@ -49,11 +49,11 @@ export function patch(n1, n2, container) {
   if (shapeFlag & ShapeFlags.COMPONENT) {
     processComponent(n1, n2, container)
   } else if (shapeFlag & ShapeFlags.TEXT) {
-    processTextNode(n1, n2, container)
+    processTextNode(n1, n2, container, anchor)
   } else if (shapeFlag & ShapeFlags.ELEMENT) {
-    processElement(n1, n2, container)
+    processElement(n1, n2, container, anchor)
   } else {
-    processFragment(n1, n2, container)
+    processFragment(n1, n2, container, anchor)
   }
 }
 
@@ -61,22 +61,22 @@ function processComponent(n1, n2, container) { }
 /**
  * @description 对Text节点比较
  */
-function processTextNode(n1, n2, container) {
+function processTextNode(n1, n2, container, anchor) {
   if (n1) {
     // 1.n1存在，则将n1内容覆盖
     n1.el.textContent = n2.children
   } else {
     // 2.n1不存在，对n2进行挂载操作
-    mountTextNode(n2, container)
+    mountTextNode(n2, container, anchor)
   }
 }
 
 /**
  * @description 挂载Text节点
  */
-function mountTextNode(vnode, container) {
+function mountTextNode(vnode, container, anchor) {
   const text = document.createTextNode(vnode.children)
-  container.appendChild(text)
+  container.insertBefore(text, anchor)
   // 记录dom节点
   vnode.el = vnode
 }
@@ -84,13 +84,13 @@ function mountTextNode(vnode, container) {
 /**
  * @description 对Element节点比较
  */
-function processElement(n1, n2, container) {
+function processElement(n1, n2, container, anchor) {
   if (n1) {
     // 1.n1存在，则比较n1和n2的内容区别
     patchElement(n1, n2, container)
   } else {
     // 2.n1不存在，对n2进行挂载操作
-    mountElement(n2, container)
+    mountElement(n2, container, anchor)
   }
 }
 
@@ -104,7 +104,7 @@ function patchElement(n1, n2) {
   patchChildren(n1, n2, n1.el)
 }
 
-function patchChildren(n1, n2, el) {
+function patchChildren(n1, n2, el, anchor) {
   const { children: c1, shapeFlag: prevShapeFlag } = n1
   const { children: c2, shapeFlag } = n2
   // 一共有三种情况：
@@ -120,12 +120,12 @@ function patchChildren(n1, n2, el) {
     // array
     if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
       el.textContent = ''
-      mountChildren(c2, el)
+      mountChildren(c2, el, anchor)
     } else if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
       // TODO：diff
-      patchUnkeyedChildren(c1, c2, el)
+      patchUnkeyedChildren(c1, c2, el, anchor)
     } else {
-      mountChildren(c2, el)
+      mountChildren(c2, el, anchor)
     }
   } else {
     // null
@@ -138,7 +138,7 @@ function patchChildren(n1, n2, el) {
 
 }
 
-function patchUnkeyedChildren(c1, c2, container) {
+function patchUnkeyedChildren(c1, c2, container, anchor) {
   const oldLength = c1.length
   const newLength = c2.length
   const commonLength = Math.min(oldLength, newLength)
@@ -152,7 +152,7 @@ function patchUnkeyedChildren(c1, c2, container) {
     unmountChildren(c1.slice(commonLength))
   } else {
     // 挂载新值多出来的children
-    mountChildren(c2.slice(commonLength), container)
+    mountChildren(c2.slice(commonLength), container, anchor)
   }
 }
 
@@ -169,7 +169,7 @@ function unmountChildren(vnode) {
 /**
  * @description 挂载Element节点
  */
-function mountElement(vnode, container) {
+function mountElement(vnode, container, anchor) {
   // 1.创建节点
   const { type, shapeFlag } = vnode
   const el = document.createElement(type)
@@ -184,7 +184,7 @@ function mountElement(vnode, container) {
     mountChildren(vnode.children, el)
   }
 
-  container.appendChild(el)
+  container.insertBefore(el, anchor)
   // 记录dom节点
   vnode.el = el
 }
@@ -192,9 +192,9 @@ function mountElement(vnode, container) {
 /**
  * @description 挂载children节点
  */
-function mountChildren(children, container) {
+function mountChildren(children, container, anchor) {
   children.forEach(child => {
-    patch(null, child, container)
+    patch(null, child, container, anchor)
   });
 }
 /**
@@ -276,13 +276,18 @@ function patchDomProp(oldValue, newValue, key, el) {
 /**
  * @description 对Fragment节点比较
  */
-function processFragment(n1, n2, container) {
+function processFragment(n1, n2, container, anchor) {
+  // 创建空节点，用于标注Fragment位置
+  const fragmentStartAnchor = n2.el = n1 ? n1.el : document.createTextNode('')
+  const fragmentEndAnchor = n2.anchor = n1 ? n1.anchor : document.createTextNode('')
   if (n1) {
     // 1.如果n1存在，则进行children比较
-    patchChildren(n1, n2, container)
+    patchChildren(n1, n2, container, fragmentEndAnchor)
   } else {
+    container.insertBefore(fragmentStartAnchor, anchor)
+    container.insertBefore(fragmentEndAnchor, anchor)
     // 2.如果n1不存在，则挂载n2的所有children
-    mountChildren(n2.children, container)
+    mountChildren(n2.children, container, fragmentEndAnchor)
   }
 }
 
