@@ -42,6 +42,7 @@ function unmount(vnode, container) {
 export function patch(n1, n2, container, anchor) {
   // 1.n1类型和n2类型不相同，则卸载n1
   if (n1 && !isSameType(n1, n2)) {
+
     unmount(n1)
   }
   // 2.根据n1、n2的类型不同，进行不同处理
@@ -256,7 +257,7 @@ function patchDomProp(oldValue, newValue, key, el) {
         const event = key.slice(2).toLocaleLowerCase()
         // 3.1 如果旧事件存在，则删除该事件
         if (oldValue) {
-          el.removeEventListener(event)
+          el.removeEventListener(event, oldValue)
         }
 
         // 3.2 如果新添加的事件有值，则该添加事件
@@ -265,7 +266,11 @@ function patchDomProp(oldValue, newValue, key, el) {
         }
       } else if (domPropsRE.test(key)) {
         // 4. 特殊处理value、checked、selected、muted、disabled为其设置boolean
-        el[key] = true
+        if (newValue === '') {
+          newValue = true
+        }
+
+        el[key] = newValue
       } else {
         // 5. 如果属性为null || false则删除，如不则设置新属性
         if (newValue == null || newValue == false) {
