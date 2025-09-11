@@ -42,8 +42,9 @@ function unmount(vnode, container) {
 export function patch(n1, n2, container, anchor) {
   // 1.n1类型和n2类型不相同，则卸载n1
   if (n1 && !isSameType(n1, n2)) {
-
+    anchor = n1.el ? n1.el.nextSibling : undefined
     unmount(n1)
+    n1 = null
   }
   // 2.根据n1、n2的类型不同，进行不同处理
   const { shapeFlag } = n2
@@ -80,7 +81,7 @@ function mountTextNode(vnode, container, anchor) {
   const text = document.createTextNode(vnode.children)
   container.insertBefore(text, anchor)
   // 记录dom节点
-  vnode.el = vnode
+  vnode.el = text
 }
 
 /**
