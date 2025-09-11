@@ -19,7 +19,7 @@ export function render(vnode, container) {
  * @description 卸载节点
  * @param {*} vnode 要卸载的节点
  */
-function unmount(vnode, container) {
+function unmount(vnode) {
   const { shapeFlag, el } = vnode
   // 根据不同type进行不同卸载操作
   if (shapeFlag === ShapeFlags.COMPONENT) {
@@ -126,8 +126,13 @@ function patchChildren(n1, n2, el, anchor) {
       el.textContent = ''
       mountChildren(c2, el, anchor)
     } else if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-      // TODO：diff
-      patchUnkeyedChildren(c1, c2, el, anchor)
+      if (c1[0] && c1[0].key != null && c2[0], c2[0].key != null) {
+        // 1.有key
+        patchkeyedChildren(c1, c2, el, anchor)
+      } else {
+        // 2.无key
+        patchUnkeyedChildren(c1, c2, el, anchor)
+      }
     } else {
       mountChildren(c2, el, anchor)
     }
@@ -142,6 +147,88 @@ function patchChildren(n1, n2, el, anchor) {
 
 }
 
+/**
+ * @description 比较有key的节点
+ */
+function patchkeyedChildren(c1, c2, el, anchor) {
+  let i = 0;
+  let e1 = c1.length - 1
+  let e2 = c2.length - 1
+  // 1.从左往右依次对比
+  while (i <= e1 && i <= e2 && c1[i].key === c2[i].key) {
+    patch(c1[i], c2[i], el, anchor)
+    i++
+  }
+
+  // 2.从右往左依次对比
+  while (i <= e1 && i <= e2 && c1[i].key === c2[i].key) {
+    patch(c1[e1--], c2[e2--], el, anchor)
+  }
+
+  if (i > e1) {
+    // 3.1 如果i > e1新增节点
+    for (let j = i; j <= e2; j++) {
+      const nextPos = e2 + 1
+      // 若新节点列表中当前位置的下一个节点存在DOM元素，则以此元素为锚点（插入到它前面）
+      // 若下一个节点不存在，则使用传入的默认锚点
+      const curAnchor = (c2[nextPos] && c2[nextPos].el) || anchor
+      patch(null, c2[j], el, curAnchor)
+    }
+  } else if (i < e1) {
+    // 3.2 如果i < e1删除节点
+    for (let j = i; j <= e1; j++) {
+      unmount(c1[j])
+    }
+  } else {
+    // 3.3 不满足3.2则进行diff
+    let maxNewIndex = 0
+    const map = new Map()
+    for (let j = i; j < e1; j++) {
+      const prev = c1[j]
+      map.set(prev, { prev, j })
+    }
+    // TODO：diff
+    // 1.遍历c2
+    for (let i = 0; i < c2.length; i++) {
+      const next = c2[i]
+      // 2.遍历c1找到相等的key进行比较
+      for (let j = 0; j < c1.length; j++) {
+        if (map.has(next.key)) {
+          const { prev, j } = map.get(next.key)
+          patch(prev, next, el, anchor)
+          find = true
+          if (j > maxNewIndex) {
+            // 2.1 不需要移动
+            maxNewIndex = j
+          } else {
+            // 2.2 需要移动
+            const curAnchor = i === 0 ? c1[0].el : c2[i - 1].el.nextSibling
+            // 2.3 将next插入对应位置
+            el.insertBefore(next.el, curAnchor)
+          }
+
+          // 2.4 删除map中的值
+          map.delete(prev.key)
+          break
+        } else {
+          const curAnchor = i === 0 ? c1[0].el : c2[i - 1].el.nextSibling
+          patch(null, next, el, curAnchor)
+        }
+      }
+    }
+
+    // 3. 删除c2中没有的元素
+    map.forEach(({ prev }) => {
+      unmount(prev)
+    })
+  }
+}
+/**
+ * @description 比较没有key的节点
+ * @param {*} c1 旧节点
+ * @param {*} c2 新节点
+ * @param {*} anchor 标记节点需要插入到谁的前面
+ */
 function patchUnkeyedChildren(c1, c2, container, anchor) {
   const oldLength = c1.length
   const newLength = c2.length
