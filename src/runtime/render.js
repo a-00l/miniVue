@@ -63,6 +63,7 @@ function processComponent(n1, n2, container) { }
  */
 function processTextNode(n1, n2, container, anchor) {
   if (n1) {
+    n2.el = n1.el;
     // 1.n1存在，则将n1内容覆盖
     n1.el.textContent = n2.children
   } else {
@@ -100,6 +101,7 @@ function processElement(n1, n2, container, anchor) {
  * @param {*} n2 
  */
 function patchElement(n1, n2) {
+  n2.el = n1.el
   patchProps(n1.props, n2.props, n1.el)
   patchChildren(n1, n2, n1.el)
 }
@@ -203,6 +205,8 @@ function mountChildren(children, container, anchor) {
 export function patchProps(oldProps, newProps, el) {
   if (oldProps === newProps) return
 
+  oldProps = oldProps || {}
+  newProps = newProps || {}
   // 1. 遍历新的属性，把新旧属性一一对比
   for (const key in newProps) {
     const newValue = newProps[key]
@@ -229,7 +233,7 @@ function patchDomProp(oldValue, newValue, key, el) {
   switch (key) {
     case 'class':
       // 1. 处理class，直接赋新值
-      el.className = newValue
+      el.className = newValue || ''
       break;
     case 'style':
       // 2.1 遍历新节点的style并设置style
