@@ -35,6 +35,21 @@ function unmount(vnode) {
 }
 
 /**
+ * @description 删除所有Fragment节点
+ * @param {*} vnode 
+ */
+function unmountFragment(vnode) {
+  const { el: start, anchor: end } = vnode
+  while (start != end) {
+    const next = start.nextSibling
+    unmount(start)
+    start = next
+  }
+
+  unmount(end)
+}
+
+/**
  * @description 比较新旧节点
  * @param {*} n1 旧节点 
  * @param {*} n2 新节点
@@ -59,7 +74,13 @@ export function patch(n1, n2, container, anchor) {
   }
 }
 
-function processComponent(n1, n2, container) { }
+function processComponent(n1, n2, container) {
+  if (n1) {
+    updateComponent(n1, n2)
+  } else {
+    mountComponent(n1, n2, container)
+  }
+}
 /**
  * @description 对Text节点比较
  */
