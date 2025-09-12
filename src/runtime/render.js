@@ -166,7 +166,7 @@ function patchkeyedChildren(c1, c2, el, anchor) {
   }
 
   if (i > e1) {
-    // 3.1 如果i > e1新增节点
+    // 3 如果i > e1新增节点
     for (let j = i; j <= e2; j++) {
       const nextPos = e2 + 1
       // 若新节点列表中当前位置的下一个节点存在DOM元素，则以此元素为锚点（插入到它前面）
@@ -174,54 +174,131 @@ function patchkeyedChildren(c1, c2, el, anchor) {
       const curAnchor = (c2[nextPos] && c2[nextPos].el) || anchor
       patch(null, c2[j], el, curAnchor)
     }
-  } else if (i < e1) {
-    // 3.2 如果i < e1删除节点
-    for (let j = i; j <= e1; j++) {
+  } else if (i > e2) {
+    // 4 如果i < e1删除节点
+    for (let j = i; j <= e2; j++) {
       unmount(c1[j])
     }
   } else {
-    // 3.3 不满足3.2则进行diff
-    let maxNewIndex = 0
+    // 5 不满足3 和 4则进行diff
     const map = new Map()
-    for (let j = i; j < e1; j++) {
+    // 5.1 将需要进行diff的vnode使用map存储起来
+    for (let j = i; j <= e1; j++) {
       const prev = c1[j]
-      map.set(prev, { prev, j })
+      map.set(prev.key, { prev, j })
     }
-    // TODO：diff
-    // 1.遍历c2
-    for (let i = 0; i < c2.length; i++) {
-      const next = c2[i]
-      // 2.遍历c1找到相等的key进行比较
-      for (let j = 0; j < c1.length; j++) {
-        if (map.has(next.key)) {
-          const { prev, j } = map.get(next.key)
-          patch(prev, next, el, anchor)
-          find = true
-          if (j > maxNewIndex) {
-            // 2.1 不需要移动
-            maxNewIndex = j
-          } else {
-            // 2.2 需要移动
-            const curAnchor = i === 0 ? c1[0].el : c2[i - 1].el.nextSibling
-            // 2.3 将next插入对应位置
-            el.insertBefore(next.el, curAnchor)
-          }
 
-          // 2.4 删除map中的值
-          map.delete(prev.key)
-          break
+    let maxNewIndex = 0
+    let move = false
+    // 用于存储c2节点在c1节点的位置，-1表示需要新增节点
+    const source = new Array(e2 - i + 1).fill(-1)
+    const toMounted = []
+    for (let k = 0; k < source.length; k++) {
+      const next = c2[k + i]
+      if (map.has(next.key)) {
+        const { prev, j } = map.get(next.key)
+        patch(prev, next, el, anchor)
+        if (j > maxNewIndex) {
+          // 不需要移动
+          maxNewIndex = j
         } else {
-          const curAnchor = i === 0 ? c1[0].el : c2[i - 1].el.nextSibling
-          patch(null, next, el, curAnchor)
+          // 需要移动
+          move = true
         }
+
+        // 记录节点
+        source[k] = j
+        // 删除map中的值
+        map.delete(next.key)
+      } else {
+        // 需要添加节点的位置
+        toMounted.push(k + i)
       }
     }
 
-    // 3. 删除c2中没有的元素
+    // 5.2 删除c2中没有的元素
     map.forEach(({ prev }) => {
       unmount(prev)
     })
+
+    if (move) {
+      // 5.3 需要移动
+      const seq = getSequence(source)
+      let j = seq.length - 1
+      for (let k = source.length - 1; k >= 0; k--) {
+        // 为最长子序列中的一员，不需要移动
+        if (seq[j] === k) {
+          j--
+        } else {
+          // 当前节点的位置
+          const pos = k + i
+          // 移动到下一个节点的前面
+          const nextPos = pos + 1
+          const curAnchor = (c2[nextPos] && c2[nextPos].el) || anchor
+          // 新增节点
+          if (source[k] === -1) {
+            patch(null, c2[pos], el, curAnchor)
+          } else {
+            el.insertBefore(c2[pos].el, curAnchor)
+          }
+        }
+      }
+    } else if (toMounted.length) {
+      // 5.4 不需要移动，但还有元素要添加
+      for (let k = 0; k < toMounted.length; k++) {
+        const pos = toMounted[k]
+        const nextPos = pos + 1
+        const curAnchor = (c2[nextPos] && c2[nextPos].el) || anchor
+        patch(null, c2[pos], el, curAnchor)
+      }
+    }
   }
+}
+
+/**
+ * @description 获取最长上升子序列的索引
+ * @param {*} nums 
+ */
+function getSequence(nums) {
+  // 1. 获取第一个节点, arr = [nums[0]]
+  const arr = [nums[0]]
+  const position = [0]
+  for (let i = 1; i < nums.length; i++) {
+    if (nums[i] === -1) continue
+    // 2. 遍历arr,如果当前元素大于arr末尾元素 → 直接加入arr，构成更长的递增子序列
+    if (nums[i] > arr[arr.length - 1]) {
+      arr.push(nums[i])
+      position.push(arr.length - 1)
+    } else {
+      // 3. 如果当前元素小于等于arr末尾元素 → 二分查找arr中第一个大于等于nums[i]的位置，替换该位置元素
+      let left = 0, right = arr.length - 1
+      while (left <= right) {
+        let middle = Math.floor((left + right) / 2)
+        if (nums[i] < arr[middle]) {
+          right = middle - 1
+        } else if (nums[i] > arr[middle]) {
+          left = middle + 1
+        } else {
+          left = middle
+          break
+        }
+      }
+
+      arr[left] = nums[i]
+      position.push(left)
+    }
+  }
+
+  // 记录最长上升子序列在nums中的索引
+  let cur = arr.length - 1
+  for (let i = position.length - 1; i >= 0 && cur >= 0; i--) {
+    if (position[i] === cur) {
+      arr[cur] = i
+      cur--
+    }
+  }
+
+  return arr
 }
 /**
  * @description 比较没有key的节点
