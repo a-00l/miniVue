@@ -1,4 +1,4 @@
-import { patchProps, ShapeFlags } from './index'
+import { mountComponent, patchProps, ShapeFlags } from './index'
 export function render(vnode, container) {
   const prevVNode = container._vnode
   // 1.vnode为空，卸载prevVNode
@@ -78,7 +78,7 @@ function processComponent(n1, n2, container) {
   if (n1) {
     updateComponent(n1, n2)
   } else {
-    mountComponent(n1, n2, container)
+    mountComponent(n2, container)
   }
 }
 /**

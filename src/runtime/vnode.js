@@ -1,4 +1,4 @@
-import { isArray, isNumber, isString } from "../utils";
+import { isArray, isNumber, isObject, isString } from "../utils";
 
 // 用于记录操作类型
 export const ShapeFlags = {
@@ -46,5 +46,23 @@ export function h(type, props, children) {
     el: null,
     anchor: null,
     key: props && props.key
+  }
+}
+
+/**
+ * @description 格式化render返回的vnode
+ * @param {*} vnode 
+ */
+export function normalizeVNode(vnode) {
+  if (isArray(vnode)) {
+    return h(Fragment, null, vnode)
+  }
+
+  if (isObject(vnode)) {
+    return vnode
+  }
+
+  if (isString(vnode) || isNumber(vnode)) {
+    return h(Text, null, vnode.toString())
   }
 }
