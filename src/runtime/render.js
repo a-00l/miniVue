@@ -206,7 +206,7 @@ function patchkeyedChildren(c1, c2, el, anchor) {
     }
   } else if (i > e2) {
     // 4 如果i < e1删除节点
-    for (let j = i; j <= e2; j++) {
+    for (let j = i; j <= e1; j++) {
       unmount(c1[j])
     }
   } else {
@@ -228,7 +228,7 @@ function patchkeyedChildren(c1, c2, el, anchor) {
       if (map.has(next.key)) {
         const { prev, j } = map.get(next.key)
         patch(prev, next, el, anchor)
-        if (j > maxNewIndex) {
+        if (j >= maxNewIndex) {
           // 不需要移动
           maxNewIndex = j
         } else {
@@ -275,7 +275,7 @@ function patchkeyedChildren(c1, c2, el, anchor) {
       }
     } else if (toMounted.length) {
       // 5.4 不需要移动，但还有元素要添加
-      for (let k = 0; k < toMounted.length; k++) {
+      for (let k = toMounted.length - 1; k >= 0; k--) {
         const pos = toMounted[k]
         const nextPos = pos + 1
         const curAnchor = (c2[nextPos] && c2[nextPos].el) || anchor

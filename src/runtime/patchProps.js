@@ -10,6 +10,7 @@ export function patchProps(oldProps, newProps, el) {
   for (const key in newProps) {
     const newValue = newProps[key]
     const oldValue = oldProps[key]
+    if (key === 'key') continue
 
     if (newValue !== oldValue) {
       // 比较不同的值进行修改
