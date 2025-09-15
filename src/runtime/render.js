@@ -22,10 +22,10 @@ export function render(vnode, container) {
 function unmount(vnode) {
   const { shapeFlag, el } = vnode
   // 根据不同type进行不同卸载操作
-  if (shapeFlag === ShapeFlags.COMPONENT) {
+  if (shapeFlag & ShapeFlags.COMPONENT) {
     // 1.卸载组件
     unmountConponent(vnode)
-  } else if (shapeFlag === ShapeFlags.FRAGMENT) {
+  } else if (shapeFlag & ShapeFlags.FRAGMENT) {
     // 2.卸载Fragment
     unmountFragment(vnode)
   } else {
@@ -42,14 +42,14 @@ function unmountConponent(vnode) {
  * @param {*} vnode 
  */
 function unmountFragment(vnode) {
-  const { el: start, anchor: end } = vnode
+  let { el: start, anchor: end } = vnode
   while (start != end) {
     const next = start.nextSibling
-    unmount(start)
+    start.parentNode.removeChild(start)
     start = next
   }
 
-  unmount(end)
+  end.parentNode.removeChild(end)
 }
 
 /**
@@ -60,7 +60,8 @@ function unmountFragment(vnode) {
 export function patch(n1, n2, container, anchor) {
   // 1.n1类型和n2类型不相同，则卸载n1
   if (n1 && !isSameType(n1, n2)) {
-    anchor = n1.el ? n1.el.nextSibling : undefined
+    // 1.1 anchor相当于最后一个空文本节点，所以anchor有值的情况下，先使用anchor的值
+    anchor = (n1.anchor || n1.el).nextSibling
     unmount(n1)
     n1 = null
   }
@@ -156,7 +157,7 @@ function patchChildren(n1, n2, el, anchor) {
       el.textContent = ''
       mountChildren(c2, el, anchor)
     } else if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-      if (c1[0] && c1[0].key != null && c2[0], c2[0].key != null) {
+      if (c1[0] && c1[0].key != null && c2[0] && c2[0].key != null) {
         // 1.有key
         patchkeyedChildren(c1, c2, el, anchor)
       } else {
