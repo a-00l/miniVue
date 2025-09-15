@@ -34,6 +34,9 @@ function unmount(vnode) {
   }
 }
 
+function unmountConponent(vnode) {
+  unmount(vnode.component.subTree)
+}
 /**
  * @description 删除所有Fragment节点
  * @param {*} vnode 
