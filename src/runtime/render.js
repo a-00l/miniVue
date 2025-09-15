@@ -82,7 +82,7 @@ function processComponent(n1, n2, container) {
   }
 }
 
-function updateComponent(n1, n2, container) {
+function updateComponent(n1, n2) {
   n2.component = n1.component
   n1.component.next = n2
   n1.component.update()
