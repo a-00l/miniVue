@@ -40,7 +40,7 @@ export function trigger(target, key) {
   dep.forEach(effectFn => {
     if (effectFn.schedule) {
       // 触发调度器
-      effectFn.schedule()
+      effectFn.schedule(effectFn)
     } else {
       effectFn()
     }

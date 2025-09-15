@@ -1,4 +1,4 @@
-import { normalizeVNode, patch } from "."
+import { normalizeVNode, patch, queueJob } from "."
 import { effect, reactive } from "../reactivity"
 
 function updateProps(vnode, instance) {
@@ -71,5 +71,7 @@ export function mountComponent(vnode, container) {
     patch(prev, subTree, container)
     instance.subTree = subTree
     vnode.el = subTree.el;
+  }, {
+    schedule: queueJob
   })
 }
