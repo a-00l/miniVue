@@ -16,7 +16,7 @@ function updateProps(vnode, instance) {
   instance.props = reactive(props)
 }
 
-export function mountComponent(vnode, container) {
+export function mountComponent(vnode, container, anchor) {
   const { type: Component } = vnode
   // 1. 创建一个实例
   const instance = vnode.component = {
@@ -68,7 +68,7 @@ export function mountComponent(vnode, container) {
     }
 
     // 5.2 比较两个组件
-    patch(prev, subTree, container)
+    patch(prev, subTree, container, anchor)
     instance.subTree = subTree
     vnode.el = subTree.el;
   }, {

@@ -68,7 +68,7 @@ export function patch(n1, n2, container, anchor) {
   // 2.根据n1、n2的类型不同，进行不同处理
   const { shapeFlag } = n2
   if (shapeFlag & ShapeFlags.COMPONENT) {
-    processComponent(n1, n2, container)
+    processComponent(n1, n2, container, anchor)
   } else if (shapeFlag & ShapeFlags.TEXT) {
     processTextNode(n1, n2, container, anchor)
   } else if (shapeFlag & ShapeFlags.ELEMENT) {
@@ -78,11 +78,11 @@ export function patch(n1, n2, container, anchor) {
   }
 }
 
-function processComponent(n1, n2, container) {
+function processComponent(n1, n2, container, anchor) {
   if (n1) {
     updateComponent(n1, n2)
   } else {
-    mountComponent(n2, container)
+    mountComponent(n2, container, anchor)
   }
 }
 
