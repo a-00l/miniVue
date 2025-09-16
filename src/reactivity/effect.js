@@ -49,6 +49,7 @@ export function trigger(target, key) {
 
 // 记录effect
 let currentEffect;
+let effects = []
 /**
  * @description 副作用函数
  * @param {Function} fn
@@ -56,10 +57,12 @@ let currentEffect;
 export function effect(fn, optoins = {}) {
   const effectFn = () => {
     try {
+      effects.push(effectFn)
       currentEffect = effectFn
       return fn()
     } finally {
-      currentEffect = null
+      effects.pop()
+      currentEffect = effects[effects.length - 1]
     }
   }
 
