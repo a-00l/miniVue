@@ -50,6 +50,8 @@ export function mountComponent(vnode, container, anchor) {
   instance.update = effect(() => {
     // 如果两个组件不同，则更新
     if (instance.next) {
+      vnode = instance.next
+      instance.next = null
       updateProps(vnode, instance)
       instance.ctx = {
         ...instance.props,
