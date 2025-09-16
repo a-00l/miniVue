@@ -6,7 +6,7 @@ function updateProps(vnode, instance) {
   const props = instance.props = {}
   const attrs = instance.attrs = {}
   for (const key in vnodeProps) {
-    if (Component?.props.includes(key)) {
+    if (Component.props?.includes(key)) {
       props[key] = vnodeProps[key]
     } else {
       attrs[key] = vnodeProps[key]
