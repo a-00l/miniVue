@@ -1,4 +1,4 @@
-import { createRoot } from "."
+import { createRoot, NodeTypes } from "."
 
 function parse(content) {
   // 1. 创建解析上下文
@@ -36,7 +36,7 @@ function parseText(context) {
   let endIndex;
   // 1. 获取结束位置
   end.forEach(flag => {
-    const index = context.source.findIndex(flag)
+    const index = context.source.indexOf(flag)
     if (endIndex > index && index != -1) {
       endIndex = index
     }
@@ -51,6 +51,36 @@ function parseText(context) {
   }
 }
 
+/**
+ * @description 解析插值
+ * @param {*} context 
+ */
+function parseInterpolation(context) {
+  // 事例 {{ name }}
+  // 1. 删除 {{
+  advance(context, 2)
+  // 删除多余空格
+  advanceSpace(context)
+  // 2. 截取里面内容直到 }}
+  const endIndex = context.source.indexOf('}}')
+  const interpolation = contentExtraction(context, endIndex).trim()
+  // 3. 删除 }}
+  return {
+    type: NodeTypes.INTERPOLATION,
+    content: {
+      type: NodeTypes.SIMPLE_EXPRESSION,
+      content: interpolation,
+      isStatic: false,
+    }
+  }
+}
+
+/**
+ * @description 删除回车、换行、tab、分页
+ */
+function advanceSpace(context) {
+  return context.source.replace(/^[\t\r\n\f ]+/, "")
+}
 /**
  * @description 从开始位置删除length多个字符 
  * @param {*} context 
