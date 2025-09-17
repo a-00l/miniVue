@@ -1,6 +1,6 @@
-import { createRoot, NodeTypes } from "."
+import { createRoot, ElementTypes, isNativeTag, NodeTypes } from "."
 
-function parse(content) {
+export function parse(content) {
   // 1. 创建解析上下文
   const context = createParseContext(content)
   // 2. 解析子节点
@@ -10,19 +10,25 @@ function parse(content) {
 }
 
 function parseChildren(context) {
+  const nodes = []
   while (!isEnd(context)) {
     const source = context.source
+    let node;
     if (source.startsWith('<')) {
       // 1. 解析标签 <
-      parseElement(context)
+      node = parseElement(context)
     } else if (source.startsWith('{{')) {
       // 2. 解析插值{{ }}
-      parseInterpolation(context)
+      node = parseInterpolation(context)
     } else {
       // 3. 解析文本
-      parseText(context)
+      node = parseText(context)
     }
+
+    nodes.push(node)
   }
+
+  return nodes
 }
 
 /**
@@ -33,7 +39,7 @@ function parseChildren(context) {
 function parseText(context) {
   // 遇到 {{ 或者 < 结束文本截取
   const end = [context.option.delimite[0], '<']
-  let endIndex;
+  let endIndex = context.source.length;
   // 1. 获取结束位置
   end.forEach(flag => {
     const index = context.source.indexOf(flag)
@@ -65,6 +71,7 @@ function parseInterpolation(context) {
   const endIndex = context.source.indexOf('}}')
   const interpolation = contentExtraction(context, endIndex).trim()
   // 3. 删除 }}
+  advance(context, 2)
   return {
     type: NodeTypes.INTERPOLATION,
     content: {
@@ -96,21 +103,29 @@ function parseTag(context) {
   const match = /^<\/?([a-z][^\t\r\n\f />]*)/i.exec(context.source)
   // 获取标签
   const tag = match[1]
-  advance(context.match[0].length)
+  advance(context, match[0].length)
   advanceSpace(context)
 
   // 2. 解析属性
   const { props, directives } = parseAttributes(context)
   // 3. 判断是否为自闭和标签
+  const isSelfClosing = context.source.startsWith('/>') ? true : false
+  advance(context, isSelfClosing ? 2 : 1)
+  // 4. 判断是否为组件
+  const tagType = isComponents(tag)
   return {
     type: NodeTypes.ELEMENT,
     tag, // 标签名,
-    tagType: ElementTypes, // 是组件还是原生元素,
+    tagType, // 是组件还是原生元素,
     props, // 属性节点数组,
     directives, // 指令数组
-    isSelfClosing: boolean, // 是否是自闭合标签,
+    isSelfClosing, // 是否是自闭合标签,
     children: [],
   }
+}
+
+function isComponents(tag) {
+  return isNativeTag(tag) ? ElementTypes.ELEMENT : ElementTypes.COMPONENT
 }
 /**
  * @description 解析属性
@@ -122,8 +137,8 @@ function parseAttributes(context) {
   const directives = []
   // 属性有两种：原生属性、自定义属性
   while (
-    context.source.length ||
-    !context.source.startsWith('/>') ||
+    context.source.length &&
+    !context.source.startsWith('/>') &&
     !context.source.startsWith('>')) {
 
     const attrs = parseAttribute(context)
@@ -150,15 +165,13 @@ function parseAttribute(context) {
   // 删除属性名以及后续空格
   advance(context, name.length)
   advanceSpace(context)
-  let value
   // 如果有等号则删除
   if (context.source[0] === '=') {
     advance(context, 1)
-    value = attributeContent(context)
   }
 
   // 2. 指令属性
-  if (/^(@|v-|:)/) {
+  if (/^(@|v-|:)/.test(name)) {
     let argContent, dirName
     // 2.1 获取指令属性
     if (name[0] === '@') {
@@ -167,21 +180,21 @@ function parseAttribute(context) {
     } else if (name[0] === ':') {
       dirName = 'bind'
       argContent = name.slice(1)
-    } else if (name[0].startsWith('v-')) {
-      dirName = 'v-'
-      argContent = name.slice(2)
+    } else if (name.startsWith('v-')) {
+      [dirName, argContent] = name.slice(2).split(':')
     }
-    // 2.2 获取指令内容
 
+    // 2.2 获取指令内容
+    let expContent = attributeContent(context)
     return {
       type: NodeTypes.DIRECTIVE,
       name: dirName,
-      exp: undefined | {
+      exp: expContent && {
         type: NodeTypes.SIMPLE_EXPRESSION,
-        content: value,
+        content: expContent,
         isStatic: false,
       }, // 表达式节点
-      arg: undefined | {
+      arg: argContent && {
         type: NodeTypes.SIMPLE_EXPRESSION,
         content: argContent,
         isStatic: true,
@@ -189,10 +202,11 @@ function parseAttribute(context) {
     }
   }
 
+  const value = attributeContent(context)
   return {
     type: NodeTypes.ATTRIBUTE,
     name,
-    value: value | {
+    value: value && {
       type: NodeTypes.TEXT,
       content: value,
     } // 纯文本节点
@@ -209,7 +223,7 @@ function attributeContent(context) {
   advance(context, 1)
   const endIndex = context.source.indexOf(quite)
   // 2. 获取内容
-  const content = contentExtraction(context, endIndex - 1)
+  const content = contentExtraction(context, endIndex)
   advance(context, 1)
   advanceSpace(context)
 
@@ -222,7 +236,7 @@ function attributeContent(context) {
 function advanceSpace(context) {
   const match = /^[\t\r\n\f ]+/.exec(context.source)
   if (match) {
-    advance(context, match)
+    advance(context, match[0].length)
   }
 }
 /**
@@ -231,7 +245,7 @@ function advanceSpace(context) {
  * @param {*} length 
  */
 function advance(context, length) {
-  context.source.slice(length)
+  context.source = context.source.slice(length)
 }
 
 /**
