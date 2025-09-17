@@ -28,7 +28,39 @@ function parseChildren(context) {
     nodes.push(node)
   }
 
-  return nodes
+  let remove = false
+  // 优化节点：删除不必要的空节点
+  for (let i = 0; i < nodes.length; i++) {
+    if (nodes[i].type === NodeTypes.TEXT) {
+      const node = nodes[i]
+      // 1. 有文本，且文本之间含有多个空白节点，则将他们压缩为一个
+      if (/[^\t\r\f\n ]/.test(node.content)) {
+        node.content.replace(/^[\t\r\f\n]+/g, '')
+      } else {
+        // 2. 没有文本
+        const prev = nodes[i - 1]
+        const next = nodes[i + 1]
+        // 2.1 标记为null有三种情况：
+        // 空节点在头和尾
+        // 满足在上一个节点和下一个节点之间，有回车有空白节点
+        if (
+          !prev ||
+          !next ||
+          prev.tagType === NodeTypes.ELEMENT &&
+          next.tagType === NodeTypes.ELEMENT &&
+          /[/n/r]/.test(node.content)
+        ) {
+          remove = true
+          nodes[i] = null
+        } else {
+          // 2.2 压缩为一个空白节点需要满足：前后节点都是Element有多个空白节点
+          nodes[i] = ' '
+        }
+      }
+    }
+  }
+
+  return remove ? nodes.filter(Boolean) : nodes
 }
 
 /**
