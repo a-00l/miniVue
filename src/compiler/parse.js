@@ -76,10 +76,154 @@ function parseInterpolation(context) {
 }
 
 /**
+ * @description 解析标签
+ * @param {*} context 
+ */
+function parseElement(context) {
+  // 思路：解析标签，随后解析里面的属性，遇到 /> || > 结束
+  // 1. 解析标签
+  const element = parseTag(context)
+  // 2. 解析子元素
+  element.children = parseChildren(context)
+  // 3. 删除末尾标签
+  parseTag(context)
+
+  return element
+}
+
+function parseTag(context) {
+  // 1. 匹配标签
+  const match = /^<\/?([a-z][^\t\r\n\f />]*)/i.exec(context.source)
+  // 获取标签
+  const tag = match[1]
+  advance(context.match[0].length)
+  advanceSpace(context)
+
+  // 2. 解析属性
+  const { props, directives } = parseAttributes(context)
+  // 3. 判断是否为自闭和标签
+  return {
+    type: NodeTypes.ELEMENT,
+    tag, // 标签名,
+    tagType: ElementTypes, // 是组件还是原生元素,
+    props, // 属性节点数组,
+    directives, // 指令数组
+    isSelfClosing: boolean, // 是否是自闭合标签,
+    children: [],
+  }
+}
+/**
+ * @description 解析属性
+ * @param {*} context 
+ * @returns 返回一个对象
+ */
+function parseAttributes(context) {
+  const props = []
+  const directives = []
+  // 属性有两种：原生属性、自定义属性
+  while (
+    context.source.length ||
+    !context.source.startsWith('/>') ||
+    !context.source.startsWith('>')) {
+
+    const attrs = parseAttribute(context)
+    if (attrs.type === NodeTypes.DIRECTIVE) {
+      // 1. 指令属性  
+      directives.push(attrs)
+    } else if (attrs.type === NodeTypes.ATTRIBUTE) {
+      // 2. 原生属性
+      props.push(attrs)
+    }
+  }
+
+  return { props, directives }
+}
+
+/**
+ * @description 处理单个属性
+ * @param {*} context 
+ */
+function parseAttribute(context) {
+  // 1. 匹配到 = 之前，记录属性名
+  const match = /^[^\t\r\n\f />][^\t\r\n\f />=]*/.exec(context.source)
+  const name = match[0]
+  // 删除属性名以及后续空格
+  advance(context, name.length)
+  advanceSpace(context)
+  let value
+  // 如果有等号则删除
+  if (context.source[0] === '=') {
+    advance(context, 1)
+    value = attributeContent(context)
+  }
+
+  // 2. 指令属性
+  if (/^(@|v-|:)/) {
+    let argContent, dirName
+    // 2.1 获取指令属性
+    if (name[0] === '@') {
+      dirName = 'on'
+      argContent = name.slice(1)
+    } else if (name[0] === ':') {
+      dirName = 'bind'
+      argContent = name.slice(1)
+    } else if (name[0].startsWith('v-')) {
+      dirName = 'v-'
+      argContent = name.slice(2)
+    }
+    // 2.2 获取指令内容
+
+    return {
+      type: NodeTypes.DIRECTIVE,
+      name: dirName,
+      exp: undefined | {
+        type: NodeTypes.SIMPLE_EXPRESSION,
+        content: value,
+        isStatic: false,
+      }, // 表达式节点
+      arg: undefined | {
+        type: NodeTypes.SIMPLE_EXPRESSION,
+        content: argContent,
+        isStatic: true,
+      } // 表达式节点
+    }
+  }
+
+  return {
+    type: NodeTypes.ATTRIBUTE,
+    name,
+    value: value | {
+      type: NodeTypes.TEXT,
+      content: value,
+    } // 纯文本节点
+  }
+}
+
+/**
+ * @description 处理属性里面的内容
+ * @param {*} context 
+ */
+function attributeContent(context) {
+  // 1. 记录引号，因为双引号和单引号都是合法的
+  const quite = context.source[0]
+  advance(context, 1)
+  const endIndex = context.source.indexOf(quite)
+  // 2. 获取内容
+  const content = contentExtraction(context, endIndex - 1)
+  advance(context, 1)
+  advanceSpace(context)
+
+  return content
+}
+
+/**
  * @description 删除回车、换行、tab、分页
  */
 function advanceSpace(context) {
-  return context.source.replace(/^[\t\r\n\f ]+/, "")
+  const match = /^[\t\r\n\f ]+/.exec(context.source)
+  if (match) {
+    advance(context, match)
+  }
 }
 /**
  * @description 从开始位置删除length多个字符 
@@ -87,7 +231,7 @@ function advanceSpace(context) {
  * @param {*} length 
  */
 function advance(context, length) {
-  return context.source.slice(length)
+  context.source.slice(length)
 }
 
 /**
