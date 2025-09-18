@@ -37,10 +37,10 @@ function traversChildren(node) {
     const child = children[0]
     // <span>hello</span>
     if (child.type === NodeTypes.TEXT) {
-      return `'${child.content}'`
+      return createText(child)
+    } else if (child.type === NodeTypes.INTERPOLATION) {
+      return createInterpolation(child)
     }
-
-    return traversNode(child, node)
   }
 
   // 1. 使用数组记录节点
@@ -145,7 +145,7 @@ function propsArr(node) {
 }
 
 function createInterpolation(node) {
-  return `h(Text, null, ${node.content.content})`
+  return node.content.content
 }
 
 function createText(node) {
