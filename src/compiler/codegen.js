@@ -35,7 +35,6 @@ function traversChildren(node) {
   const { children } = node
   if (children.length === 1) {
     const child = children[0]
-    // <span>hello</span>
     if (child.type === NodeTypes.TEXT) {
       return createText(child)
     } else if (child.type === NodeTypes.INTERPOLATION) {
@@ -55,17 +54,17 @@ function traversChildren(node) {
 export function resolveElementATSNode(node, parent) {
   // 1. 有指令节点
   // v-if：exp.content ? createElementNode(node) : h(Text, null, ')
-  const ifNode = pluck(node, 'if')
+  const ifNode = pluck(node, 'if') || pluck(node, 'else-if')
   if (ifNode) {
     const condition = ifNode.exp.content
     const consequent = resolveElementATSNode(node, parent)
     let alternate = `h(Text, null, "")`
-    // 1.1 处理v-else：必须要连续
+    // 1.1 else-if 和 else 必须要连续，如果不连续，则返回
     const { children } = parent
     const index = children.findIndex(child => child === node) + 1
     const sibling = children[index]
-    // 1.2 如果下个节点存在else，修改alternate
-    if (pluck(sibling, 'else')) {
+    // 1.2 这里的else-if指令不能立即删除，因为下次递归ifNode需要使用
+    if (sibling && (pluck(sibling, 'else-if', false) || pluck(sibling, 'else'))) {
       alternate = resolveElementATSNode(sibling, parent)
       children.splice(index, 1)
     }
@@ -89,11 +88,11 @@ export function resolveElementATSNode(node, parent) {
 /**
  * @description 返回该指令节点，且删除该指令节点
  */
-function pluck(node, name) {
+function pluck(node, name, remove = true) {
   const index = node.directives.findIndex(dir => dir.name === name)
   const dir = node.directives[index]
   // 该指令存在，则删除
-  if (index > -1) {
+  if (index > -1 && remove) {
     node.directives.splice(index, 1)
   }
 
@@ -149,7 +148,7 @@ function createInterpolation(node) {
 }
 
 function createText(node) {
-  return `h(Text, null, ${node.content})`
+  return `'${node.content}'`
 }
 
 /**
