@@ -17,8 +17,8 @@ function traversNode(node) {
     case NodeTypes.ROOT:
       // 1. 处理根节点：多个根节点和一个根节点的情况
       node.children.lenght === 1 ?
-        traversChildren(node.children[0]) :
-        traversChildren(node.children)
+        traversNode(node.children[0]) :
+        traversChildren(node)
       break;
     case NodeTypes.ELEMENT:
       // 2. 处理Element节点
@@ -35,7 +35,22 @@ function traversNode(node) {
   }
 }
 
-function traversChildren(node) { }
+function traversChildren(node) {
+  const { children } = node
+  // 1. 使用数组记录节点
+  const result = []
+  for (let i = 0; i < children.length; i++) {
+    result.push(traversNode(children[i]))
+  }
+
+  return result.length === 1 ? result[0] : `[${result.join(',')}]`
+}
+
 function resolveElementNode(node) { }
-function createInterpolation(node) { }
-function createText(node) { }
+function createInterpolation(node) {
+  return `h(${Text}, null, ${node.content.content})`
+}
+
+function createText(node) {
+  return `h(${Text}, null, ${node.content})`
+}

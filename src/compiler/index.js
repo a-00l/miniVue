@@ -1,6 +1,6 @@
+export { generate } from './codegen';
 export { createRoot, NodeTypes, ElementTypes } from './ast'
 export { parse } from './parse'
-
 const HTML_TAGS =
   'html,body,base,head,link,meta,style,title,address,article,aside,footer,' +
   'header,h1,h2,h3,h4,h5,h6,hgroup,nav,section,div,dd,dl,dt,figcaption,' +
