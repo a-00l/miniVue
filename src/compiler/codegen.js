@@ -16,7 +16,7 @@ function traversNode(node) {
   switch (node.type) {
     case NodeTypes.ROOT:
       // 1. 处理根节点：多个根节点和一个根节点的情况
-      return node.children.lenght === 1 ?
+      return node.children.length === 1 ?
         traversNode(node.children[0]) :
         traversChildren(node)
     case NodeTypes.ELEMENT:
@@ -33,13 +33,23 @@ function traversNode(node) {
 
 function traversChildren(node) {
   const { children } = node
+  if (children.length === 1) {
+    const child = children[0]
+    // <span>hello</span>
+    if (child.type === NodeTypes.TEXT) {
+      return `'${children[0].content}'`
+    }
+
+    return traversNode(children)
+  }
+
   // 1. 使用数组记录节点
   const result = []
   for (let i = 0; i < children.length; i++) {
     result.push(traversNode(children[i]))
   }
 
-  return result.length === 1 ? result[0] : `[${result.join(',')}]`
+  return `[${result.join(',')}]`
 }
 
 export function resolveElementATSNode(node) {
@@ -51,7 +61,7 @@ export function resolveElementATSNode(node) {
     const consequent = resolveElementATSNode(node)
     const alternate = `h(Text, null, "")`
 
-    return condition ? `'${consequent}'` : alternate
+    return `${condition} ? ${consequent} : ${alternate}`
   }
 
   // v-for：h(Fragment, null, renderList(list, item => h('li', null, item)))
