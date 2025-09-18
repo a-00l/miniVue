@@ -48,7 +48,7 @@ function parseChildren(context) {
           !next ||
           prev.tagType === NodeTypes.ELEMENT &&
           next.tagType === NodeTypes.ELEMENT &&
-          /[/n/r]/.test(node.content)
+          /[\n\r]/.test(node.content)
         ) {
           remove = true
           nodes[i] = null
