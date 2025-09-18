@@ -16,22 +16,18 @@ function traversNode(node) {
   switch (node.type) {
     case NodeTypes.ROOT:
       // 1. 处理根节点：多个根节点和一个根节点的情况
-      node.children.lenght === 1 ?
+      return node.children.lenght === 1 ?
         traversNode(node.children[0]) :
         traversChildren(node)
-      break;
     case NodeTypes.ELEMENT:
       // 2. 处理Element节点
-      resolveElementATSNode(node)
-      break;
+      return resolveElementATSNode(node)
     case NodeTypes.INTERPOLATION:
       // 3. 处理插值节点
-      createInterpolation(node)
-      break;
+      return createInterpolation(node)
     case NodeTypes.TEXT:
       // 4. 处理文本节点
-      createText(node)
-      break;
+      return createText(node)
   }
 }
 
@@ -130,11 +126,11 @@ function propsArr(node) {
 }
 
 function createInterpolation(node) {
-  return `h(${Text}, null, ${node.content.content})`
+  return `h(Text, null, ${node.content.content})`
 }
 
 function createText(node) {
-  return `h(${Text}, null, ${node.content})`
+  return `h(Text, null, ${node.content})`
 }
 
 /**
