@@ -11,17 +11,17 @@ export function generate(ast) {
   return code
 }
 
-function traversNode(node) {
+function traversNode(node, parent) {
   // 不同的节点做不同的处理
   switch (node.type) {
     case NodeTypes.ROOT:
       // 1. 处理根节点：多个根节点和一个根节点的情况
       return node.children.length === 1 ?
-        traversNode(node.children[0]) :
+        traversNode(node.children[0], node) :
         traversChildren(node)
     case NodeTypes.ELEMENT:
       // 2. 处理Element节点
-      return resolveElementATSNode(node)
+      return resolveElementATSNode(node, parent)
     case NodeTypes.INTERPOLATION:
       // 3. 处理插值节点
       return createInterpolation(node)
@@ -40,26 +40,35 @@ function traversChildren(node) {
       return `'${child.content}'`
     }
 
-    return traversNode(child)
+    return traversNode(child, node)
   }
 
   // 1. 使用数组记录节点
   const result = []
   for (let i = 0; i < children.length; i++) {
-    result.push(traversNode(children[i]))
+    result.push(traversNode(children[i], node))
   }
 
   return `[${result.join(',')}]`
 }
 
-export function resolveElementATSNode(node) {
+export function resolveElementATSNode(node, parent) {
   // 1. 有指令节点
   // v-if：exp.content ? createElementNode(node) : h(Text, null, ')
   const ifNode = pluck(node, 'if')
   if (ifNode) {
     const condition = ifNode.exp.content
-    const consequent = resolveElementATSNode(node)
-    const alternate = `h(Text, null, "")`
+    const consequent = resolveElementATSNode(node, parent)
+    let alternate = `h(Text, null, "")`
+    // 1.1 处理v-else：必须要连续
+    const { children } = parent
+    const index = children.findIndex(child => child === node) + 1
+    const sibling = children[index]
+    // 1.2 如果下个节点存在else，修改alternate
+    if (pluck(sibling, 'else')) {
+      alternate = resolveElementATSNode(sibling, parent)
+      children.splice(index, 1)
+    }
 
     return `${condition} ? ${consequent} : ${alternate}`
   }
@@ -70,7 +79,7 @@ export function resolveElementATSNode(node) {
     // v-for="item in items"
     // 将 in 两边的数据存储放到数组
     const [exp, source] = forNode.exp.content.split(/\sin\s|\sof\s/)
-    return `h(Fragment, null, renderList(${source.trim()},${exp.trim()} => ${resolveElementATSNode(node)}))`
+    return `h(Fragment, null, renderList(${source.trim()},${exp.trim()} => ${resolveElementATSNode(node, parent)}))`
   }
 
   // 2. 没有指令节点
