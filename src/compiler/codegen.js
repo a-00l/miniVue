@@ -46,7 +46,19 @@ function traversChildren(node) {
   return result.length === 1 ? result[0] : `[${result.join(',')}]`
 }
 
-function resolveElementNode(node) { }
+function resolveElementNode(node) {
+  // 返回 h(node.tag, node.props, node.children)
+  // 1. 处理标签名
+  const tag = node.tag
+  // 2. 处理props
+  const props = propsArr(node)
+  // 3. 处理children
+  const children = traversChildren(node)
+
+  return `h(${tag}, ${props}, ${children})`
+}
+
+function propsArr(node) { }
 function createInterpolation(node) {
   return `h(${Text}, null, ${node.content.content})`
 }
