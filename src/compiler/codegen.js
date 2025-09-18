@@ -5,7 +5,7 @@ export function generate(ast) {
   const data = traversNode(ast)
   // 2. 将渲染函数返回
   const code = `
-    return ${data}
+    return render(${data})
   `
 
   return code
@@ -37,10 +37,10 @@ function traversChildren(node) {
     const child = children[0]
     // <span>hello</span>
     if (child.type === NodeTypes.TEXT) {
-      return `'${children[0].content}'`
+      return `'${child.content}'`
     }
 
-    return traversNode(children)
+    return traversNode(child)
   }
 
   // 1. 使用数组记录节点
