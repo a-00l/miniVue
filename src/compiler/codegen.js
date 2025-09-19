@@ -2,7 +2,8 @@ import { NodeTypes } from ".";
 
 export function generate(ast) {
   // 1. 解析ast树
-  const data = traversNode(ast)
+  const data = traverseNode(ast)
+
   // 2. 将渲染函数返回
   const code = `
   with(ctx) {
@@ -14,14 +15,14 @@ export function generate(ast) {
   return code
 }
 
-function traversNode(node, parent) {
+function traverseNode(node, parent) {
   // 不同的节点做不同的处理
   switch (node.type) {
     case NodeTypes.ROOT:
       // 1. 处理根节点：多个根节点和一个根节点的情况
       return node.children.length === 1 ?
-        traversNode(node.children[0], node) :
-        traversChildren(node)
+        traverseNode(node.children[0], node) :
+        traverseChildren(node)
     case NodeTypes.ELEMENT:
       // 2. 处理Element节点
       return resolveElementATSNode(node, parent)
@@ -34,7 +35,7 @@ function traversNode(node, parent) {
   }
 }
 
-function traversChildren(node) {
+function traverseChildren(node) {
   const { children } = node
   if (children.length === 1) {
     const child = children[0]
@@ -48,7 +49,7 @@ function traversChildren(node) {
   // 1. 使用数组记录节点
   const result = []
   for (let i = 0; i < children.length; i++) {
-    result.push(traversNode(children[i], node))
+    result.push(traverseNode(children[i], node))
   }
 
   return `[${result.join(',')}]`
@@ -136,21 +137,24 @@ function pluck(node, name, remove = true) {
 function createElementNode(node) {
   // 返回 h(node.tag, node.props, node.children)
   // 1. 处理标签名
-  const tag = node.tag
+  const { tag, children } = node
   // 2. 处理props
   let props = propsArr(node)
   // 判断是否有值
   props = props.length ? `{ ${props.join(',')} }` : null
 
-  // 3. 处理children
-  const children = traversChildren(node)
-  // props和children都为空
-  if (!props && !children?.length) {
-    return `h('${tag}')`
+  if (!children.length) {
+    if (!props) {
+      return `h('${tag}')`
+    }
+
+    return `h('${tag}', ${props})`
   }
+  // 3. 处理children
+  const traverseChild = traverseChildren(node)
 
   // 4. 有子节点时传递children参数，否则只传tag和props
-  return children.length ? `h('${tag}', ${props}, ${children})` : `h('${tag}', ${props})`
+  return `h('${tag}', ${props}, ${traverseChild})`
 }
 
 function propsArr(node) {
