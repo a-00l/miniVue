@@ -6,7 +6,7 @@ export function generate(ast) {
   // 2. 将渲染函数返回
   const code = `
   with(ctx) {
-    const {h,render,Text,Fragment} = MiniVue
+    const {h,render,Text,Fragment,renderList} = MiniVue
     return ${data}
   }
   `
