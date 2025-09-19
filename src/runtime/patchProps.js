@@ -28,7 +28,7 @@ export function patchProps(oldProps, newProps, el) {
 }
 
 // 检查boolean属性
-const domPropsRE = /^(value|checked|selected|muted|disabled)$/;
+const domPropsRE = /^(checked|selected|muted|disabled)$/;
 function patchDomProp(oldValue, newValue, key, el) {
   switch (key) {
     case 'class':
