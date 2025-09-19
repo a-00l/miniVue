@@ -1,4 +1,5 @@
 import { normalizeVNode, patch, queueJob } from "."
+import { compile } from "../compiler"
 import { effect, reactive } from "../reactivity"
 
 function updateProps(vnode, instance) {
@@ -54,6 +55,13 @@ export function mountComponent(vnode, container, anchor) {
     ...instance.setupState
   }
 
+  // 使用compiler解析HTML
+  if (!Component.render && Component.template) {
+    let { template } = Component
+    const code = compile(template)
+    Component.render = new Function('ctx', code)
+  }
+
   // 5. 挂载节点
   instance.update = effect(() => {
     // 如果两个组件不同，则更新
@@ -68,7 +76,7 @@ export function mountComponent(vnode, container, anchor) {
     }
 
     const prev = instance.subTree
-    const subTree = normalizeVNode(Component.render(instance.ctx))
+    const subTree = instance.subTree = normalizeVNode(Component.render(instance.ctx))
     // 5.1 实现透传
     if (Object.keys(instance.attrs).length) {
       subTree.props = {
@@ -79,7 +87,6 @@ export function mountComponent(vnode, container, anchor) {
 
     // 5.2 比较两个组件
     patch(prev, subTree, container, anchor)
-    instance.subTree = subTree
     vnode.el = subTree.el;
   }, {
     schedule: queueJob

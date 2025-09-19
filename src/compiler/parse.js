@@ -125,7 +125,7 @@ function parseElement(context) {
   // 2. 解析子元素
   element.children = parseChildren(context)
   // 3. 删除末尾标签
-  parseTag(context)
+  context.source.length ? parseTag(context) : ''
 
   return element
 }

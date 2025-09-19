@@ -56,6 +56,37 @@ function traversChildren(node) {
 
 export function resolveElementATSNode(node, parent) {
   // 1. 有指令节点
+  // v-model
+  const vModel = pluck(node, 'model')
+  if (vModel) {
+    // :value="test" @input="$event => test = $event.target.value"
+    node.directives.push(
+      {
+        type: NodeTypes.DIRECTIVE,
+        name: 'bind',
+        exp: vModel.exp, // 表达式节点
+        arg: {
+          type: NodeTypes.SIMPLE_EXPRESSION,
+          content: 'value',
+          isStatic: true,
+        }, // 表达式节点
+      },
+      {
+        type: NodeTypes.DIRECTIVE,
+        name: 'on',
+        exp: {
+          type: NodeTypes.SIMPLE_EXPRESSION,
+          content: `($event) => ${vModel.exp.content} = $event.target.value`,
+          isStatic: false,
+        }, // 表达式节点
+        arg: {
+          type: NodeTypes.SIMPLE_EXPRESSION,
+          content: 'input',
+          isStatic: true,
+        }, // 表达式节点
+      }
+    );
+  }
   // v-if：exp.content ? createElementNode(node) : h(Text, null, ')
   const ifNode = pluck(node, 'if') || pluck(node, 'else-if')
   if (ifNode) {
