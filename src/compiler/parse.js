@@ -1,4 +1,4 @@
-import { createRoot, ElementTypes, isNativeTag, NodeTypes } from "."
+import { createRoot, ElementTypes, isNativeTag, isVoidTag, NodeTypes } from "."
 
 export function parse(content) {
   // 1. 创建解析上下文
@@ -60,6 +60,8 @@ function parseChildren(context) {
     }
   }
 
+  console.log(remove ? nodes.filter(Boolean) : nodes);
+
   return remove ? nodes.filter(Boolean) : nodes
 }
 
@@ -104,6 +106,7 @@ function parseInterpolation(context) {
   const interpolation = contentExtraction(context, endIndex).trim()
   // 3. 删除 }}
   advance(context, 2)
+
   return {
     type: NodeTypes.INTERPOLATION,
     content: {
@@ -122,6 +125,11 @@ function parseElement(context) {
   // 思路：解析标签，随后解析里面的属性，遇到 /> || > 结束
   // 1. 解析标签
   const element = parseTag(context)
+  // 1.1 如果标签是闭合标签或空标签如：<br> <input>为空标签
+  if (element.isSelfClosing || context.option.isVoidTag(element.tag)) {
+    return element
+  }
+
   // 2. 解析子元素
   element.children = parseChildren(context)
   // 3. 删除末尾标签
@@ -143,6 +151,8 @@ function parseTag(context) {
   // 3. 判断是否为自闭和标签
   const isSelfClosing = context.source.startsWith('/>') ? true : false
   advance(context, isSelfClosing ? 2 : 1)
+  advanceSpace(context)
+
   // 4. 判断是否为组件
   const tagType = isComponents(tag)
   return {
@@ -300,7 +310,9 @@ function isEnd(context) {
 function createParseContext(content) {
   return {
     option: {
-      delimite: ['{{', '}}']
+      delimite: ['{{', '}}'],
+      isVoidTag,
+      isNativeTag
     },
     source: content
   }
