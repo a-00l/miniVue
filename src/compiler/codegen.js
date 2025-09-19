@@ -5,7 +5,10 @@ export function generate(ast) {
   const data = traversNode(ast)
   // 2. 将渲染函数返回
   const code = `
-    return render(${data})
+  with(ctx) {
+    const {h,render,Text,Fragment} = MiniVue
+    return ${data}
+  }
   `
 
   return code
@@ -106,17 +109,17 @@ function createElementNode(node) {
   // 2. 处理props
   let props = propsArr(node)
   // 判断是否有值
-  props = props.length ? { ...props } : null
+  props = props.length ? `{ ${props.join(',')} }` : null
 
   // 3. 处理children
   const children = traversChildren(node)
   // props和children都为空
   if (!props && !children?.length) {
-    return `h(${tag})`
+    return `h('${tag}')`
   }
 
   // 4. 有子节点时传递children参数，否则只传tag和props
-  return children.length ? `h(${tag}, ${props}, ${children})` : `h(${tag}, ${props})`
+  return children.length ? `h('${tag}', ${props}, ${children})` : `h('${tag}', ${props})`
 }
 
 function propsArr(node) {
