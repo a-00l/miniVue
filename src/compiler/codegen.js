@@ -27,10 +27,10 @@ function traversNode(node, parent) {
       return resolveElementATSNode(node, parent)
     case NodeTypes.INTERPOLATION:
       // 3. 处理插值节点
-      return createInterpolation(node)
+      return createTextNode(node.content)
     case NodeTypes.TEXT:
       // 4. 处理文本节点
-      return createText(node)
+      return createTextNode(node)
   }
 }
 
@@ -41,7 +41,7 @@ function traversChildren(node) {
     if (child.type === NodeTypes.TEXT) {
       return createText(child)
     } else if (child.type === NodeTypes.INTERPOLATION) {
-      return createInterpolation(child)
+      return createText(child.content)
     }
   }
 
@@ -177,12 +177,12 @@ function propsArr(node) {
   ]
 }
 
-function createInterpolation(node) {
-  return node.content.content
+function createText({ isStatic = true, content }) {
+  return isStatic ? `'${content}'` : content
 }
 
-function createText(node) {
-  return `'${node.content}'`
+function createTextNode(node) {
+  return `h(Text, null,${createText(node)})`
 }
 
 /**
