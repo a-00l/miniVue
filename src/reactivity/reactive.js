@@ -1,4 +1,4 @@
-import { hasChanged, isObject } from "../utils";
+import { hasChanged, isArray, isObject } from "../utils";
 import { track, trigger } from './index.js'
 
 const proxyMap = new Map()
@@ -29,10 +29,13 @@ export function reactive(target) {
       // 获取旧值
       const oldValue = target[key]
       const result = Reflect.set(target, key, newValue, receiver)
-
+      const oldLength = target.length
       // 如果值改变了，再触发
       if (hasChanged(oldValue, newValue)) {
         trigger(target, key)
+        if (isArray(target) && hasChanged(oldLength, target[key].length)) {
+          trigger(target, 'length')
+        }
       }
 
       return result
