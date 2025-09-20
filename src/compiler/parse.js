@@ -35,7 +35,7 @@ function parseChildren(context) {
       const node = nodes[i]
       // 1. 有文本，且文本之间含有多个空白节点，则将他们压缩为一个
       if (/[^\t\r\f\n ]/.test(node.content)) {
-        node.content.replace(/^[\t\r\f\n]+/g, '')
+        node.content.replace(/^[\t\r\f\n]+/g, ' ')
       } else {
         // 2. 没有文本
         const prev = nodes[i - 1]
@@ -54,13 +54,11 @@ function parseChildren(context) {
           nodes[i] = null
         } else {
           // 2.2 压缩为一个空白节点需要满足：前后节点都是Element有多个空白节点
-          nodes[i] = ' '
+          nodes[i].content = ' '
         }
       }
     }
   }
-
-  console.log(remove ? nodes.filter(Boolean) : nodes);
 
   return remove ? nodes.filter(Boolean) : nodes
 }
