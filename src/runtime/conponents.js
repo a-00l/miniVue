@@ -14,7 +14,7 @@ function updateProps(vnode, instance) {
     }
   }
 
-  instance.props = reactive(props)
+  instance.props = reactive(instance.props)
 }
 
 // component实现思路：
