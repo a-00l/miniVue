@@ -21,3 +21,14 @@ export function isArray(target) {
 export function isNumber(target) {
   return typeof target === 'number'
 }
+
+export function camelize(str) {
+  return str.replace(/-(\w)/g, (_, c) => (c ? c.toUpperCase() : ''))
+}
+
+/**
+ * @description 首字母大写
+ */
+export function capitalize(str) {
+  return str[0].toUpperCase() + str.slice(1)
+}

@@ -1,4 +1,5 @@
 import { NodeTypes } from ".";
+import { capitalize } from "../utils";
 
 export function generate(ast) {
   // 1. 解析ast树
@@ -7,10 +8,11 @@ export function generate(ast) {
   // 2. 将渲染函数返回
   const code = `
   with(ctx) {
-    const {h,render,Text,Fragment,renderList} = MiniVue
+    const {h,render,Text,Fragment,renderList, resolveComponents} = MiniVue
     return ${data}
   }
   `
+  console.log(code);
 
   return code
 }
@@ -137,7 +139,8 @@ function pluck(node, name, remove = true) {
 function createElementNode(node) {
   // 返回 h(node.tag, node.props, node.children)
   // 1. 处理标签名
-  const { tag, children } = node
+  const { children } = node
+  const tag = node.tagType === NodeTypes.ELEMENT ? `'${node.tag}'` : `resolveComponents('${node.tag}')`
   // 2. 处理props
   let props = propsArr(node)
   // 判断是否有值
@@ -145,16 +148,16 @@ function createElementNode(node) {
 
   if (!children.length) {
     if (!props) {
-      return `h('${tag}')`
+      return `h(${tag})`
     }
 
-    return `h('${tag}', ${props})`
+    return `h(${tag}, ${props})`
   }
   // 3. 处理children
   const traverseChild = traverseChildren(node)
 
   // 4. 有子节点时传递children参数，否则只传tag和props
-  return `h('${tag}', ${props}, ${traverseChild})`
+  return `h(${tag}, ${props}, ${traverseChild})`
 }
 
 function propsArr(node) {
@@ -187,11 +190,4 @@ function createText({ isStatic = true, content }) {
 
 function createTextNode(node) {
   return `h(Text, null,${createText(node)})`
-}
-
-/**
- * @description 首字母大写
- */
-function capitalize(str) {
-  return str[0].toUpperCase() + str.slice(1)
 }
